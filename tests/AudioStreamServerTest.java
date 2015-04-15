@@ -18,19 +18,18 @@ import src.AudioStreamServerImpl;
 public class AudioStreamServerTest {
 
 	/**
-	 * Instantiates server with provided tcp port and tests that 
-	 * the same port number is returned as the current listening port.
+	 * Instantiates server and tests that the default 
+	 * port number is returned as the current listening port.
 	 */
 	@Test
 	public void getTcpPort(){
-		int tcpPortToOpen = 65501;
-		AudioStreamServer server = new AudioStreamServerImpl(65501);
+		AudioStreamServer server = new AudioStreamServerImpl();
 		Thread sT = new Thread(server);
 		sT.start();
-		int tcpPort = -1;
-		do tcpPort = server.getTcpPort();
-		while (tcpPort == -1);
-		assertEquals(tcpPortToOpen, tcpPort);
+		while (!server.isTcpReady());
+		int tcpPort = server.getTcpPort();
+		boolean isValid = (tcpPort > 0);
+		assertEquals(true, isValid);
 	}
 	
 	/**
@@ -48,15 +47,14 @@ public class AudioStreamServerTest {
 		BufferedReader inputFromServer = null;
 		int returnVal = -1;
 		try {
-			int tcpPort = -1;
-			do tcpPort = server.getTcpPort();
-			while (tcpPort == -1);
+			while (!server.isTcpReady());
+			int tcpPort = server.getTcpPort();
 			clientSocket = new Socket("localhost", tcpPort);
 			outputToServer = 
 					new DataOutputStream(clientSocket.getOutputStream());
 			inputFromServer = 
 					new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			outputToServer.writeBytes(String.valueOf(AudioStreamServerImpl.ID_REQUEST));
+			outputToServer.writeBytes(String.valueOf(AudioStreamServerImpl.CONN_REQUEST));
 			outputToServer.writeBytes("\n");
 	        returnVal = Integer.parseInt(inputFromServer.readLine());
 			inputFromServer.close();
@@ -74,29 +72,43 @@ public class AudioStreamServerTest {
 	 * Mimics several clients requesting ids from the server.
 	 * Tests that the ids received are 0-3.      
 	 */
+	@Test
 	public void connectSeveralClients() throws IOException{
 		AudioStreamServer server = new AudioStreamServerImpl();
 		Thread[] clientThreads = new Thread[4];
 		AudioStreamClient[] clients = new AudioStreamClient[4];
-		Set<Integer> expectedIds = new HashSet<Integer>();
+		int[] expectedIds = new int[4];
 		Thread serverTh = new Thread(server);
 		serverTh.start();
 		
-		for (int i = 0; i < 4; i++){
-			expectedIds.add(i);
-			int tcpPort = -1;
-			do tcpPort = server.getTcpPort();
-			while (tcpPort == -1);
-			clients[i] = new AudioStreamClientImpl(server.getTcpPort());
-			clientThreads[i] = new Thread(clients[i]);
-			clientThreads[i].start();
-			while (clientThreads[i].isAlive());
-		}		
-
-		Set<Integer> ids = new HashSet<Integer>();
-		for (AudioStreamClient clientInst : clients){
-			ids.add(clientInst.getId());
-		}
-		assertEquals(true, expectedIds.equals(ids));
+		boolean unexpectedId = false;
+		for (int i = 0; i < AudioStreamServerImpl.MAX_CONNECTIONS; i++){
+			Socket clientSocket = null;
+			DataOutputStream outputToServer = null;
+			BufferedReader inputFromServer = null;
+			int returnVal = -1;
+			try {
+				while (!server.isTcpReady());
+				int tcpPort = server.getTcpPort();
+				clientSocket = new Socket("localhost", tcpPort);
+				outputToServer = 
+						new DataOutputStream(clientSocket.getOutputStream());
+				inputFromServer = new BufferedReader(
+						new InputStreamReader(clientSocket.getInputStream()));
+				outputToServer.writeBytes(String.valueOf(AudioStreamServerImpl.CONN_REQUEST));
+				outputToServer.writeBytes("\n");
+		        returnVal = Integer.parseInt(inputFromServer.readLine());
+				inputFromServer.close();
+				outputToServer.close();
+				clientSocket.close();
+			} catch (UnknownHostException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}	
+			if (returnVal != i) unexpectedId = true;
+		}	
+		
+		assertEquals(false, unexpectedId);
 	}
 }

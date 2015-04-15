@@ -7,5 +7,7 @@ public interface AudioStreamServer extends Runnable{
 	 * @return the port to connect to
 	 */
 	public int getTcpPort();
+	
+	public boolean isTcpReady();
 
 }
