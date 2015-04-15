@@ -54,8 +54,8 @@ public class AudioStreamServerTest {
 					new DataOutputStream(clientSocket.getOutputStream());
 			inputFromServer = 
 					new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			outputToServer.writeBytes(String.valueOf(AudioStreamServerImpl.CONN_REQUEST));
-			outputToServer.writeBytes("\n");
+			//outputToServer.writeBytes(String.valueOf(AudioStreamServerImpl.CONN_REQUEST));
+			//outputToServer.writeBytes("\n");
 	        returnVal = Integer.parseInt(inputFromServer.readLine());
 			inputFromServer.close();
 			outputToServer.close();
@@ -64,7 +64,7 @@ public class AudioStreamServerTest {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}	
+		}
 		assertEquals(0, returnVal);
 	}
 	
@@ -95,8 +95,8 @@ public class AudioStreamServerTest {
 						new DataOutputStream(clientSocket.getOutputStream());
 				inputFromServer = new BufferedReader(
 						new InputStreamReader(clientSocket.getInputStream()));
-				outputToServer.writeBytes(String.valueOf(AudioStreamServerImpl.CONN_REQUEST));
-				outputToServer.writeBytes("\n");
+				//outputToServer.writeBytes(String.valueOf(AudioStreamServerImpl.CONN_REQUEST));
+				//outputToServer.writeBytes("\n");
 		        returnVal = Integer.parseInt(inputFromServer.readLine());
 				inputFromServer.close();
 				outputToServer.close();
@@ -110,5 +110,84 @@ public class AudioStreamServerTest {
 		}	
 		
 		assertEquals(false, unexpectedId);
+	}
+	
+	@Test
+	public void isProviderTest(){
+		AudioStreamServer server = new AudioStreamServerImpl();
+		Thread sT = new Thread(server);
+		sT.start();
+		Socket clientSocket = null;
+		DataOutputStream outputToServer = null;
+		BufferedReader inputFromServer = null;
+		int returnVal = -1;
+		int isProvider = -1;
+		try {
+			while (!server.isTcpReady());
+			int tcpPort = server.getTcpPort();
+			clientSocket = new Socket("localhost", tcpPort);
+			outputToServer = 
+					new DataOutputStream(clientSocket.getOutputStream());
+			inputFromServer = 
+					new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+	        
+			int id = Integer.parseInt(inputFromServer.readLine());
+	        outputToServer.writeBytes(String.valueOf(AudioStreamServerImpl.ROLE_REQUEST));
+			outputToServer.writeBytes("\n");
+			isProvider = Integer.parseInt(inputFromServer.readLine());
+	        inputFromServer.close();
+			outputToServer.close();
+			clientSocket.close();
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		assertEquals(1, isProvider);
+	}
+	
+	@Test
+	public void testRoles() throws IOException{
+		AudioStreamServer server = new AudioStreamServerImpl();
+		Thread[] clientThreads = new Thread[4];
+		AudioStreamClient[] clients = new AudioStreamClient[4];
+		int[] expectedIds = new int[4];
+		Thread serverTh = new Thread(server);
+		serverTh.start();
+		
+		boolean unexpectedRole = false;
+		for (int i = 0; i < AudioStreamServerImpl.MAX_CONNECTIONS; i++){
+			Socket clientSocket = null;
+			DataOutputStream outputToServer = null;
+			BufferedReader inputFromServer = null;
+			int returnVal = -1;
+			int isProvider = -1;
+			try {
+				while (!server.isTcpReady());
+				int tcpPort = server.getTcpPort();
+				clientSocket = new Socket("localhost", tcpPort);
+				outputToServer = 
+						new DataOutputStream(clientSocket.getOutputStream());
+				inputFromServer = new BufferedReader(
+						new InputStreamReader(clientSocket.getInputStream()));
+				//outputToServer.writeBytes(String.valueOf(AudioStreamServerImpl.CONN_REQUEST));
+				//outputToServer.writeBytes("\n");
+		        returnVal = Integer.parseInt(inputFromServer.readLine());
+		        outputToServer.writeBytes(String.valueOf(AudioStreamServerImpl.ROLE_REQUEST));
+				outputToServer.writeBytes("\n");
+		        isProvider = Integer.parseInt(inputFromServer.readLine());
+				inputFromServer.close();
+				outputToServer.close();
+				clientSocket.close();
+			} catch (UnknownHostException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}	
+			if (i == 0 && isProvider != 1 ) unexpectedRole = true;
+			else if (i != 0 && isProvider == 1 ) unexpectedRole = true;
+		}	
+		
+		assertEquals(false, unexpectedRole);
 	}
 }
