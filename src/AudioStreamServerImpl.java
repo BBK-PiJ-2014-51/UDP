@@ -43,45 +43,53 @@ public class AudioStreamServerImpl implements AudioStreamServer{
 	
 	private void launch() {
 			startTcpService();
-			//start upd
+			
 	}
 	
 	private void startTcpService(){
+		ServerSocket server = null;
 		while(numConnected < MAX_CONNECTIONS){
 			try{
-				ServerSocket port = new ServerSocket(0);
-				tcpPort = port.getLocalPort();
+				server = new ServerSocket(0);
+				tcpPort = server.getLocalPort();
 				tcpIsReady = true;
-				Socket connectionSocket = port.accept();
-				tcpIsReady = false;
-				BufferedReader clientInputReader = new BufferedReader(
-					new InputStreamReader(connectionSocket.getInputStream()));
-				DataOutputStream clientOutputStream = new DataOutputStream(
-					connectionSocket.getOutputStream());
-				tcpConns[numConnected] = new TcpHandler(nextId++, port, connectionSocket, 
-						clientInputReader, clientOutputStream);
+				Socket client = server.accept();
+				tcpConns[numConnected] = new TcpHandler(nextId++, client);
 				clientThreads[numConnected] = new Thread(tcpConns[numConnected]);
 				clientThreads[numConnected].start();				
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
+		try {
+			Thread.sleep(100);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			server.close();
+			tcpIsReady = false;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	private class TcpHandler implements Runnable{
 		private DataOutputStream clientOutputStream;
-		private BufferedReader clientInputReader;
-		private ServerSocket port;
+		private BufferedReader clientInputReader; //TODO: not used?
 		private Socket connectionSocket;
 		private int nextId;
 		
-		public TcpHandler(int nextId, ServerSocket port, Socket connectionSocket, 
-				BufferedReader clientInputReader, DataOutputStream clientOutputStream) {
+		public TcpHandler(int nextId, Socket client) {
+			try {
+				clientInputReader = new BufferedReader(new InputStreamReader(client.getInputStream()));
+				clientOutputStream = new DataOutputStream(client.getOutputStream());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}	
 			this.nextId = nextId;
-			this.port = port;
-			this.connectionSocket = connectionSocket;
-			this.clientOutputStream = clientOutputStream;
-			this.clientInputReader = clientInputReader;
+			connectionSocket = client;
 		}
 
 		@Override
@@ -89,23 +97,17 @@ public class AudioStreamServerImpl implements AudioStreamServer{
 			try {
 				numConnected++;
 				clientOutputStream.writeBytes(String.valueOf(nextId) + '\n');
-				Thread.sleep(35); // TODO find better way to wait for client input
-				int request = Integer.valueOf(clientInputReader.readLine());
-				if (request == ROLE_REQUEST)
-					clientOutputStream.writeBytes(String.valueOf(
-							(nextId == 0) ? 1 : 0) + '\n');
+				clientOutputStream.writeBytes(String.valueOf(
+						(nextId == 0) ? 1 : 0) + '\n');
+				//start upd
 				close();
 			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (InterruptedException e) {
-				// TODO remove with sleep timer
 				e.printStackTrace();
 			}
 		}
 		
 		public boolean close(){
 			try {
-				port.close();
 				connectionSocket.close();
 				clientOutputStream.close();
 				clientInputReader.close();

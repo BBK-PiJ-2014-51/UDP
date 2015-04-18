@@ -132,8 +132,8 @@ public class AudioStreamServerTest {
 					new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 	        
 			int id = Integer.parseInt(inputFromServer.readLine());
-	        outputToServer.writeBytes(String.valueOf(AudioStreamServerImpl.ROLE_REQUEST));
-			outputToServer.writeBytes("\n");
+	        //outputToServer.writeBytes(String.valueOf(AudioStreamServerImpl.ROLE_REQUEST));
+			//outputToServer.writeBytes("\n");
 			isProvider = Integer.parseInt(inputFromServer.readLine());
 	        inputFromServer.close();
 			outputToServer.close();
@@ -173,8 +173,8 @@ public class AudioStreamServerTest {
 				//outputToServer.writeBytes(String.valueOf(AudioStreamServerImpl.CONN_REQUEST));
 				//outputToServer.writeBytes("\n");
 		        returnVal = Integer.parseInt(inputFromServer.readLine());
-		        outputToServer.writeBytes(String.valueOf(AudioStreamServerImpl.ROLE_REQUEST));
-				outputToServer.writeBytes("\n");
+		        //outputToServer.writeBytes(String.valueOf(AudioStreamServerImpl.ROLE_REQUEST));
+				//outputToServer.writeBytes("\n");
 		        isProvider = Integer.parseInt(inputFromServer.readLine());
 				inputFromServer.close();
 				outputToServer.close();
