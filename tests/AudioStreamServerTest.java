@@ -10,8 +10,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.HashSet;
-import java.util.Set;
 
 import src.AudioStreamClient;
 import src.AudioStreamClientImpl;
@@ -145,8 +143,8 @@ public class AudioStreamServerTest {
 	}
 	
 	/**
-	 * Runs max amount of connections in seperate threads
-	 * Tests that the num connected is same as max connections.      
+	 * Runs max amount of connections in separate threads
+	 * Tests that the number connected is same as max connections.      
 	 * @throws InterruptedException 
 	 */
 	@Test
@@ -185,7 +183,7 @@ public class AudioStreamServerTest {
 		}
 		
 		try {
-			Thread.sleep(500); // give clients time to connect
+			Thread.sleep(30000); // give clients time to connect
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

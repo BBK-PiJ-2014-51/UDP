@@ -6,12 +6,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
 
 public class ConnectionHandler implements Runnable{
 		
 	private DataOutputStream clientOutputStream;
-	private BufferedReader clientInputReader; //TODO: not used?
+	private BufferedReader clientInputReader;
 	private Socket connectionSocket;
 	private int nextId;
 	private DatagramSocket udpSocket;
@@ -38,9 +39,13 @@ public class ConnectionHandler implements Runnable{
 					(isProvider) ? 1 : 0) + '\n');
 			
 			byte[] buffer;
+			
+			//start upd
+			udpSocket = new DatagramSocket();
 			if (isProvider){
-				//start upd
-				udpSocket = new DatagramSocket();
+				
+				
+				//tell client where to send audio
 				int udpSockNo = udpSocket.getLocalPort();
 				System.out.println("udpSocket: " + udpSockNo);
 				clientOutputStream.writeBytes(String.valueOf(udpSockNo)  + '\n');
@@ -48,18 +53,31 @@ public class ConnectionHandler implements Runnable{
 				//clientOutputStream.writeBytes(udpSocket.getInetAddress().toString()); //to send outside of localhost
 				
 				while(true){
-					//receive audio, place in temp buffer
+					//receive audio, from place in temp buffer
 					buffer = new byte[AudioStreamServerImpl.BUFFER_SIZE];
 					DatagramPacket incomingPacket = new DatagramPacket(buffer, buffer.length);
 					udpSocket.receive(incomingPacket);
-					this.server.fillBuffer(incomingPacket.getData());
+					server.fillBuffer(incomingPacket.getData());
 					//incomingPacket.getData();
 					//InetAddress IPAddress = incomingPacket.getAddress();
 					//int port = incomingPacket.getPort();
-					
 				}
 			} else {
+				//get connection info from client
+				int udpPort = Integer.parseInt(clientInputReader.readLine());
+				System.out.println("Received from client udp port no: " + udpPort);
+				String ip = clientInputReader.readLine();
+				InetAddress IPAddress = InetAddress.getByName(ip);
+				
 				//send temp buffer to clients
+				int index = 0;
+				while (true){
+					byte[] bytes = server.getAudioByte(index++);
+					DatagramPacket sendPacket =
+								new DatagramPacket(bytes, bytes.length, IPAddress, udpPort);
+						udpSocket.send(sendPacket);
+					if (index >= AudioStreamServerImpl.BUFFER_LENGTH) index = 0;
+				}
 				
 				/* TODO go on with something like this
 				buffer = new byte[BUFFER_SIZE];
