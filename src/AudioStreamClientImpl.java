@@ -102,11 +102,11 @@ public class AudioStreamClientImpl implements AudioStreamClient {
 				
 				//receive and playback from server 
 				AudioFormat format = new AudioFormat(44100, 16, 2, true, false);
-	            DataLine.Info dInfo = new DataLine.Info(SourceDataLine.class, format, 100000);
+	            DataLine.Info dInfo = new DataLine.Info(SourceDataLine.class, format, 64000);
 	            SourceDataLine soundLine = null;
 	            try {
 					soundLine = (SourceDataLine) AudioSystem.getLine(dInfo);
-					soundLine.open(format, 100000);
+					soundLine.open(format, 64000);
 					soundLine.start();
 				} catch (LineUnavailableException e) {
 					e.printStackTrace();
@@ -121,7 +121,15 @@ public class AudioStreamClientImpl implements AudioStreamClient {
 					udpSocket.receive(incomingPacket);
 		            
 		            buffer = incomingPacket.getData();
-		            soundLine.drain();
+		            byte [] subarray = new byte[8];
+		            for (int i = 0; i < 8; i++){
+		            	subarray[i] = buffer[i];
+		            }
+		            String reset = new String(subarray);
+		            if (reset.equals("reconnec")) {
+		            	System.out.println("reconnecting..");
+		            	break;
+		            }
 		            soundLine.write(buffer, 0, buffer.length);
 		            
 		            String received = "received";
@@ -129,19 +137,16 @@ public class AudioStreamClientImpl implements AudioStreamClient {
 					DatagramPacket ackPacket =
 							new DatagramPacket(bytes, bytes.length, incomingPacket.getAddress(), incomingPacket.getPort());
 					udpSocket.send(ackPacket);
-		            
-		            
-					//System.out.println("Client has received: " + incomingPacket.getData().toString());
+
 				}
 				
 			}
 			
-			//inputFromServer.close(); // TODO unreachable error
-			//outputToServer.close();
-			//clientSocket.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		run();
 		return true;
 	}
 
