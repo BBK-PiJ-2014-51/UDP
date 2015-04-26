@@ -3,6 +3,7 @@ package tests;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -28,8 +29,9 @@ public class AudioStreamServerTest {
 		Thread sT = new Thread(server);
 		sT.start();
 		while (!server.isTcpReady());
+		int tcpPort = server.getTcpPort();
 		server.closeTcpService();
-		assertEquals(true, server.getTcpPort() > 0);
+		assertEquals(true, tcpPort > 0);
 	}
 	
 	/**
@@ -157,7 +159,7 @@ public class AudioStreamServerTest {
 				AudioStreamClient client = new AudioStreamClientImpl();
 				Thread clientTh = new Thread(client);
 				clientTh.start();
-				Thread.sleep(25);// give client time to connect
+				Thread.sleep(5);// give client time to connect
 		}
 
 		
@@ -180,12 +182,6 @@ public class AudioStreamServerTest {
 				AudioStreamClient client = new AudioStreamClientImpl();
 				Thread clientTh = new Thread(client);
 				clientTh.start();
-		}
-		
-		try {
-			Thread.sleep(30000); // give clients time to connect
-		} catch (InterruptedException e) {
-			e.printStackTrace();
 		}
 		
 		int numConnected = server.getNumConnected();
@@ -222,4 +218,75 @@ public class AudioStreamServerTest {
 		assertEquals(false, originalObject.equals(updatedObject));	
 	}
 	
+	@Test
+	public void playSomeMusic(){
+		AudioStreamServer server = new AudioStreamServerImpl();
+		Thread sT = new Thread(server);
+		sT.start();
+		
+		for (int i = 0; i < 2; i++){
+			AudioStreamClient client = new AudioStreamClientImpl();
+			Thread clientTh = new Thread(client);
+			clientTh.start();
+		}
+
+		try {
+			Thread.sleep(10000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		server.closeTcpService();
+		assertEquals(true, true);
+	}
+	
+	
+	@Test
+	public void playSomePhaseyMusic(){
+		AudioStreamServer server = new AudioStreamServerImpl();
+		Thread sT = new Thread(server);
+		sT.start();
+		
+		for (int i = 0; i < 4; i++){
+			AudioStreamClient client = new AudioStreamClientImpl();
+			Thread clientTh = new Thread(client);
+			clientTh.start();
+		}
+
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		server.closeTcpService();
+		assertEquals(true, true);
+	}
+	
+	@Test
+	public void resumeAfterProviderDisconnects(){
+		AudioStreamServer server = new AudioStreamServerImpl();
+		Thread sT = new Thread(server);
+		sT.start();
+		
+		AudioStreamClient[] clients = new AudioStreamClient[3];
+		for (int i = 0; i < 3; i++){
+			AudioStreamClient client = new AudioStreamClientImpl();
+			Thread clientTh = new Thread(client);
+			clientTh.start();
+		}
+		
+		clients [0] = null; 
+		
+		try {
+			Thread.sleep(50);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		server.closeTcpService();
+		assertEquals(clients[1].getId(), 0);
+	}
 }
