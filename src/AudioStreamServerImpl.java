@@ -7,10 +7,10 @@ import java.net.SocketException;
 
 public class AudioStreamServerImpl implements AudioStreamServer{
 
-	public static final int DEFAULT_TCP_PORT = 65003;
-	public static final int MAX_CONNECTIONS = 2;
-	public static final int BUFFER_SIZE = 50000; //number of bytes in each byte array
-	public static final int BUFFER_LENGTH = 500; //number of byte arrays in buffer
+	public static final int DEFAULT_TCP_PORT = 65000;
+	public static final int MAX_CONNECTIONS = 8;
+	public static final int BUFFER_SIZE = 65000; //number of bytes in each byte array
+	public static final int BUFFER_LENGTH = 512; //number of byte arrays in buffer
 	
 	private ConnectionHandler[] tcpConns = new ConnectionHandler[MAX_CONNECTIONS];
 	private int numConnected = 0;
@@ -25,6 +25,14 @@ public class AudioStreamServerImpl implements AudioStreamServer{
 	private int providerIndex = 0;
 	private int nextBufferWrite = 0;
 
+	private boolean[] receivedLast = new boolean[MAX_CONNECTIONS - 1];
+	private static int nextBufferRead = 0;
+	private int acks = 0;
+	
+	private boolean udpReady = true;
+	
+	private Socket client = null;
+	
 	public static void main(String[] args) {
 		new AudioStreamServerImpl().run();
 	}
@@ -41,14 +49,22 @@ public class AudioStreamServerImpl implements AudioStreamServer{
 	
 	@Override
 	public void fillBuffer(byte[] data){
+		System.out.println("Writing to buffer at index " + nextBufferWrite);
 		buffer[nextBufferWrite++] = data;
-		//System.out.println("Writing " + data.toString());
+		while (nextBufferWrite > (nextBufferRead + 10) % BUFFER_LENGTH ){
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 		if (nextBufferWrite == BUFFER_LENGTH)
 			nextBufferWrite = 0;
 	}
 	
 	@Override
 	public byte[] getAudioByte(int index){
+		System.out.println("Reading from buffer at index " + index);
 		return buffer[index];
 	}
 	
@@ -73,6 +89,41 @@ public class AudioStreamServerImpl implements AudioStreamServer{
 		return numConnected;
 	}
 	
+	@Override
+	public void clientReceived(int id) {
+		acks++;
+		System.out.println("client " + id + " received packet");
+		checkReceived();
+	}
+	
+	private void checkReceived(){		
+		if (acks == numConnected - 1){
+			System.out.println("All received");
+			for (int i = 0; i < receivedLast.length; i++){
+				receivedLast[i] = false;
+			}
+			
+			nextBufferRead++;
+			udpReady = true;
+			acks = 0;
+		}
+	}
+
+	@Override
+	public byte[] getNextAudioByte() {
+		if (nextBufferRead > nextBufferWrite){
+			String response = "reconnec";
+			tcpConns[0] = null;
+			clientThreads[0] = null;
+			nextId = nextBufferRead = nextBufferWrite = numConnected = 0;
+			return response.getBytes();
+		}
+		System.out.println("reading at " + nextBufferRead);
+		if (nextBufferRead == BUFFER_LENGTH) nextBufferRead = 0;
+		return buffer[nextBufferRead];
+		
+	}
+	
 	private void startTcpService() throws IOException, SocketException{
 		if (server == null){
 			server = new ServerSocket(DEFAULT_TCP_PORT);
@@ -81,7 +132,7 @@ public class AudioStreamServerImpl implements AudioStreamServer{
 		
 		tcpIsReady = true;
 		while(numConnected < MAX_CONNECTIONS){
-			Socket client = server.accept();
+			client = server.accept();
 			tcpConns[numConnected] = new ConnectionHandler(nextId++, client, this);
 			clientThreads[numConnected] = new Thread(tcpConns[numConnected]);
 			clientThreads[numConnected++].start();				
@@ -90,7 +141,7 @@ public class AudioStreamServerImpl implements AudioStreamServer{
 		tcpIsReady = false;
 		while (numConnected >= MAX_CONNECTIONS){
 			try {
-				Thread.sleep(100);
+				Thread.sleep(1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -101,12 +152,18 @@ public class AudioStreamServerImpl implements AudioStreamServer{
 	
 	public void closeTcpService(){
 		tcpIsReady = false;
+		
 		if(server != null)
 			try {
+
 				server.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 	}
 
+	@Override
+	public boolean udpIsReady() {
+		return udpReady;
+	}
 }	 
