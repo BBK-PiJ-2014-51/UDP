@@ -147,14 +147,38 @@ public class AudioStreamServerTest {
 	/**
 	 * Runs max amount of connections in seperate threads
 	 * Tests that the num connected is same as max connections.      
+	 * @throws InterruptedException 
 	 */
 	@Test
-	public void connectMaxClients(){
+	public void connectMaxClients() throws InterruptedException{
 		AudioStreamServer server = new AudioStreamServerImpl();
 		Thread serverTh = new Thread(server);
 		serverTh.start();
 		
 		for (int i = 0; i < AudioStreamServerImpl.MAX_CONNECTIONS; i++){
+				AudioStreamClient client = new AudioStreamClientImpl();
+				Thread clientTh = new Thread(client);
+				clientTh.start();
+				Thread.sleep(25);// give client time to connect
+		}
+
+		
+		int numConnected = server.getNumConnected();
+		server.closeTcpService();
+		assertEquals(AudioStreamServerImpl.MAX_CONNECTIONS, numConnected);
+	}
+	
+	/**
+	 * Runs more than max amount of connections in seperate threads
+	 * Tests that the num connected is same as max connections.      
+	 */
+	@Test
+	public void connectOverMaxClients(){
+		AudioStreamServer server = new AudioStreamServerImpl();
+		Thread serverTh = new Thread(server);
+		serverTh.start();
+		
+		for (int i = 0; i < AudioStreamServerImpl.MAX_CONNECTIONS + 2; i++){
 				AudioStreamClient client = new AudioStreamClientImpl();
 				Thread clientTh = new Thread(client);
 				clientTh.start();
@@ -167,9 +191,37 @@ public class AudioStreamServerTest {
 		}
 		
 		int numConnected = server.getNumConnected();
-		//server.closeTcpService();
+		server.closeTcpService();
 		assertEquals(AudioStreamServerImpl.MAX_CONNECTIONS, numConnected);
 	}
 	
-	//test more than max connections 
+	/**
+	 * Checks that audio can be received from first client, placed into buffer,
+	 * and taken out of buffer.
+	 * 
+	 * @throws InterruptedException 
+	 */
+	@Test
+	public void readWriteToBuffer() throws InterruptedException{
+		
+		AudioStreamServer server = new AudioStreamServerImpl();
+		Thread sT = new Thread(server);
+		sT.start();
+		
+		byte[] data = server.getAudioByte(0);
+		String originalObject = data.toString();
+		
+		AudioStreamClient client = new AudioStreamClientImpl();
+		Thread clientTh = new Thread(client);
+		clientTh.start();
+		
+		Thread.sleep(5);
+		
+		data = server.getAudioByte(0);
+		String updatedObject = data.toString();
+		
+		server.closeTcpService();
+		assertEquals(false, originalObject.equals(updatedObject));	
+	}
+	
 }
