@@ -2,7 +2,7 @@ UDP (CW5)
 Audio Streaming Client & Server
 By Caleb Clayton
 
-Basic workflow:
+Basic workflow
 		An audio server is launched, opens tcp and begins accepting connections. The first client to connect becomes the audio
 	provider. The audio provider submits audio to server in chunks which are stored in a buffer. All subsequent client
 	connections are audio listeners - they receive chunks from the server's buffer that is filled by the provider.
@@ -17,11 +17,11 @@ Basic workflow:
 		If the provder gets too far behind the listeners he assumed is disconencted or too slow and gets booted. If the provider is 
 	disconnected the server is reset and all clients are messaged to reconnect. The first to reconnect will be new provider.
 
-A few notes about the project:
-	I. Audio must be a 16 bit, stereo wav sampled at 44.1 khz
+A few notes about the project
+	I - Audio must be a 16 bit, stereo wav sampled at 44.1 khz
 	
-	II. path to audio must be specifed correctly at line 182 of client implementation
+	II - path to audio must be specifed correctly at line 182 of client implementation
 	
-	III. Unit testing proved difficult. While there is some basic test coverage, it may be more useful to just launch client / server
+	III - Unit testing proved difficult. While there is some basic test coverage, it may be more useful to just launch client / server
 	instances. Audio can be heard and there is some basic indication of where the buffers are reading and writing from provided by
 	standard out.
