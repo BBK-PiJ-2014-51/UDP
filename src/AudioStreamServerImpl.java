@@ -90,15 +90,29 @@ public class AudioStreamServerImpl implements AudioStreamServer{
 	}
 	
 	private void startTcpService() throws IOException, SocketException{
-		server = new ServerSocket(DEFAULT_TCP_PORT);
-		tcpPort = server.getLocalPort();
+		if (server == null){
+			server = new ServerSocket(DEFAULT_TCP_PORT);
+			tcpPort = server.getLocalPort();
+		}	
+		
 		tcpIsReady = true;
-		while(true){
+		while(numConnected < MAX_CONNECTIONS){
 			Socket client = server.accept();
 			tcpConns[numConnected] = new ConnectionHandler(nextId++, client, this);
 			clientThreads[numConnected] = new Thread(tcpConns[numConnected]);
 			clientThreads[numConnected++].start();				
-		}	
+		}
+		
+		tcpIsReady = false;
+		while (numConnected >= MAX_CONNECTIONS){
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		startTcpService();
 	}
 	
 	public void closeTcpService(){
@@ -111,6 +125,4 @@ public class AudioStreamServerImpl implements AudioStreamServer{
 			}
 	}
 
-	
-	
 }	 
