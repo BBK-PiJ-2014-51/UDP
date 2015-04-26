@@ -1,9 +1,7 @@
 package tests;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import org.junit.Test;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -218,6 +216,9 @@ public class AudioStreamServerTest {
 		assertEquals(false, originalObject.equals(updatedObject));	
 	}
 	
+	/**
+	 * Plays back music to a single client instance from a single provider instance
+	 */
 	@Test
 	public void playSomeMusic(){
 		AudioStreamServer server = new AudioStreamServerImpl();
@@ -241,7 +242,10 @@ public class AudioStreamServerTest {
 		assertEquals(true, true);
 	}
 	
-	
+	/**
+	 * Plays back music to several clients. Sounds weird due to phasing and timing issues between
+	 * client audio streams.
+	 */
 	@Test
 	public void playSomePhaseyMusic(){
 		AudioStreamServer server = new AudioStreamServerImpl();
@@ -257,7 +261,6 @@ public class AudioStreamServerTest {
 		try {
 			Thread.sleep(5000);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -265,6 +268,10 @@ public class AudioStreamServerTest {
 		assertEquals(true, true);
 	}
 	
+	/**
+	 * Disconnects audio provider randomly. Server should issue reconnect messages and
+	 * clients should reconnect. first new one becoming the new provider
+	 */
 	@Test
 	public void resumeAfterProviderDisconnects(){
 		AudioStreamServer server = new AudioStreamServerImpl();

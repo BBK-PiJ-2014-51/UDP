@@ -6,9 +6,8 @@ public interface AudioStreamClient extends Runnable {
 	 * Instructs client to connect to server. Receive connection
 	 * information and begin participation in audio streaming.
 	 * 
-	 * @return false if cannot connect
 	 */
-	public boolean connect();
+	public void connect();
 
 	/**
 	 * Returns id issued by server

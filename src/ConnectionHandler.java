@@ -18,6 +18,13 @@ public class ConnectionHandler implements Runnable{
 	private DatagramSocket udpSocket;
 	private AudioStreamServer server;
 	
+	/**
+	 * constructs client handler to deal with client connections
+	 * 
+	 * @param nextId id to assign client
+	 * @param client socket client is connected tp
+	 * @param server server impl that launched handler
+	 */
 	public ConnectionHandler(int nextId, Socket client, AudioStreamServer server) {
 		try {
 			clientInputReader = new BufferedReader(new InputStreamReader(client.getInputStream()));
@@ -31,6 +38,9 @@ public class ConnectionHandler implements Runnable{
 	}
 	
 	
+	/**
+	 * manages both audio provider and listener roles on server side
+	 */
 	@Override
 	public void run() {	
 		boolean isProvider = (id == server.getProviderIndex());
@@ -108,6 +118,11 @@ public class ConnectionHandler implements Runnable{
 		close();
 	}
 	
+	/**
+	 * closes resources used by handler
+	 * 
+	 * @return true on completion
+	 */
 	public boolean close(){
 		try {
 			if (udpSocket != null) udpSocket.close();

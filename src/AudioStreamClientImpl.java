@@ -21,16 +21,21 @@ import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
 public class AudioStreamClientImpl implements AudioStreamClient {
+	public static final int DEFAULT_TCP_PORT = 65000; //must match server impl
+	
 	private int id;
 	private boolean isProvider;
 	
 	private Socket clientSocket;
 	private BufferedInputStream in;
 	private ByteArrayOutputStream out;
-		
+	
+	/**
+	 * opens up new socket on local host
+	 */
 	public AudioStreamClientImpl(){
 		try {
-			clientSocket = new Socket("localhost", AudioStreamServerImpl.DEFAULT_TCP_PORT);
+			clientSocket = new Socket("localhost", DEFAULT_TCP_PORT);
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -38,23 +43,37 @@ public class AudioStreamClientImpl implements AudioStreamClient {
 		}
 	}
 	
+	/**
+	 * client connects when ran
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		AudioStreamClient client = new AudioStreamClientImpl();
 		client.connect();
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public int getId(){
 		return id;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean isAudioProvider(){
 		return isProvider;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 * manages both provider and listener roles on client side
+	 */
 	@Override
-	public boolean connect(){
+	public void connect(){
 		try {
 			DataOutputStream outputToServer = 
 					new DataOutputStream(clientSocket.getOutputStream());
@@ -93,7 +112,6 @@ public class AudioStreamClientImpl implements AudioStreamClient {
 				}
 				
 			} else { //receive and play audio
-		
 				//notify server where to send audio
 				int udpSockNo = udpSocket.getLocalPort();
 				System.out.println("client udpSocket open at: " + udpSockNo);
@@ -137,24 +155,28 @@ public class AudioStreamClientImpl implements AudioStreamClient {
 					DatagramPacket ackPacket =
 							new DatagramPacket(bytes, bytes.length, incomingPacket.getAddress(), incomingPacket.getPort());
 					udpSocket.send(ackPacket);
-
 				}
-				
 			}
-			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
 		run();
-		return true;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * runs connect method
+	 */
 	@Override
 	public void run() {
 		connect();		
 	}
 	
+	/**
+	 * Loads next song into input stream
+	 * 
+	 * TODO refactor into a playlist of some sort
+	 */
 	private void loadSong() {
 		try {
 			in = new BufferedInputStream(new FileInputStream("louis.wav"));
@@ -164,6 +186,11 @@ public class AudioStreamClientImpl implements AudioStreamClient {
 		} 
 	}
 	
+	/**
+	 * retrieves next byte array from input stream and returns it.
+	 * 
+	 * @return next byte[] for buffering
+	 */
 	private byte[] getNextAudioBytes() {
 		byte[] buffer = new byte[AudioStreamServerImpl.BUFFER_SIZE];
 		try {
