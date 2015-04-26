@@ -17,3 +17,5 @@ I - Audio must be a 16 bit, stereo wav sampled at 44.1 khz
 II - path to audio must be specifed correctly at line 182 of client implementation
 	
 III - Unit testing proved difficult. While there is some basic test coverage, it may be more useful to just launch client / server instances. Audio can be heard and there is some basic indication of where the buffers are reading and writing from provided by standard out.
+
+To hear some audio either run a server and at least two clients (one provider and one listener) from an ide, command line, or there are a couple unit tests which will play audio. Launching more than one listening client locally will result in some phasing and timing artifacts in the audio.
