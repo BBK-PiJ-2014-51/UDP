@@ -20,4 +20,10 @@ public interface AudioStreamServer extends Runnable{
 
 	public int getProviderIndex();
 
+	public void clientReceived(int id);
+
+	public byte[] getNextAudioByte();
+
+	public boolean udpIsReady();
+
 }
