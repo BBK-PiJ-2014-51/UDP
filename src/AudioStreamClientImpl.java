@@ -121,8 +121,15 @@ public class AudioStreamClientImpl implements AudioStreamClient {
 					udpSocket.receive(incomingPacket);
 		            
 		            buffer = incomingPacket.getData();
-		            //soundLine.drain();
+		            soundLine.drain();
 		            soundLine.write(buffer, 0, buffer.length);
+		            
+		            String received = "received";
+					byte[] bytes = received.getBytes();
+					DatagramPacket ackPacket =
+							new DatagramPacket(bytes, bytes.length, incomingPacket.getAddress(), incomingPacket.getPort());
+					udpSocket.send(ackPacket);
+		            
 		            
 					//System.out.println("Client has received: " + incomingPacket.getData().toString());
 				}

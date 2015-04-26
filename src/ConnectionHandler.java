@@ -75,11 +75,19 @@ public class ConnectionHandler implements Runnable{
 				//send temp buffer to clients
 				int index = 0;
 				while (true){
+					System.out.println("Requesting " + index);
 					byte[] bytes = server.getAudioByte(index++);
 					DatagramPacket sendPacket =
 								new DatagramPacket(bytes, bytes.length, IPAddress, udpPort);
 					udpSocket.send(sendPacket);
 					
+					byte[] response = new byte[8];
+					boolean sent = false;
+					DatagramPacket ackPacket = new DatagramPacket(response, response.length);
+					udpSocket.receive(ackPacket);
+					String ack = new String(ackPacket.getData());
+					if(ack.equals("received")) sent = true;
+					else sent = true;
 					
 					//notify of receipt or loop back
 					
