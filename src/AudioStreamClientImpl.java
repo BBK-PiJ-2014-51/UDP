@@ -179,7 +179,7 @@ public class AudioStreamClientImpl implements AudioStreamClient {
 	 */
 	private void loadSong() {
 		try {
-			in = new BufferedInputStream(new FileInputStream("louis.wav"));
+			in = new BufferedInputStream(new FileInputStream("src/audio/louis.wav")); //make sure path here is correct
 			out = new ByteArrayOutputStream();
 		} catch (FileNotFoundException e) {
 				e.printStackTrace();
