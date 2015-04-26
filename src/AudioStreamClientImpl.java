@@ -64,10 +64,10 @@ public class AudioStreamClientImpl implements AudioStreamClient {
 			isProvider = (inputFromServer.readLine().equals("1"));
 			System.out.println("isProv val: " + isProvider);
 			
+			//open udp
+			DatagramSocket udpSocket = new DatagramSocket(); 
 			if (isProvider){
-				
-				DatagramSocket udpSocket = new DatagramSocket();
-				
+					
 				System.out.println("this client is a provider");
 				int udpPort = Integer.parseInt(inputFromServer.readLine());
 				System.out.println("Received from server udp port no: " + udpPort);
@@ -76,19 +76,24 @@ public class AudioStreamClientImpl implements AudioStreamClient {
 				
 				loadSong();
 				//send audio
+				boolean sent = true;
+				byte[] bytes = null;
 				while (true){
-					byte[] bytes = getNextAudioBytes();
+					if (sent) bytes = getNextAudioBytes();
 					DatagramPacket sendPacket =
 								new DatagramPacket(bytes, bytes.length, IPAddress, udpPort);
-						udpSocket.send(sendPacket);
-					}
+					udpSocket.send(sendPacket);
+					
+					byte[] response = new byte[8];
+					DatagramPacket ackPacket = new DatagramPacket(response, response.length);
+					udpSocket.receive(ackPacket);
+					String ack = new String(ackPacket.getData());
+					if(ack.equals("received")) sent = true;
+					else sent = true;
+				}
 				
-			} else {
-				//receive and play audio
-				
-				//open udp connection
-				DatagramSocket udpSocket = new DatagramSocket();
-				
+			} else { //receive and play audio
+		
 				//notify server where to send audio
 				int udpSockNo = udpSocket.getLocalPort();
 				System.out.println("client udpSocket open at: " + udpSockNo);
@@ -106,6 +111,7 @@ public class AudioStreamClientImpl implements AudioStreamClient {
 				} catch (LineUnavailableException e) {
 					e.printStackTrace();
 				}
+	            
 				byte[] buffer;
 				int bufferOffset = 0;
 				while(true){
@@ -132,8 +138,6 @@ public class AudioStreamClientImpl implements AudioStreamClient {
 		return true;
 	}
 
-	
-
 	@Override
 	public void run() {
 		connect();		
@@ -147,7 +151,7 @@ public class AudioStreamClientImpl implements AudioStreamClient {
 				e.printStackTrace();
 		} 
 	}
-
+	
 	private byte[] getNextAudioBytes() {
 		byte[] buffer = new byte[AudioStreamServerImpl.BUFFER_SIZE];
 		try {

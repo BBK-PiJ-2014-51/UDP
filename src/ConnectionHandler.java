@@ -44,7 +44,6 @@ public class ConnectionHandler implements Runnable{
 			udpSocket = new DatagramSocket();
 			if (isProvider){
 				
-				
 				//tell client where to send audio
 				int udpSockNo = udpSocket.getLocalPort();
 				System.out.println("udpSocket: " + udpSockNo);
@@ -57,10 +56,14 @@ public class ConnectionHandler implements Runnable{
 					buffer = new byte[AudioStreamServerImpl.BUFFER_SIZE];
 					DatagramPacket incomingPacket = new DatagramPacket(buffer, buffer.length);
 					udpSocket.receive(incomingPacket);
-					server.fillBuffer(incomingPacket.getData());
-					//incomingPacket.getData();
-					//InetAddress IPAddress = incomingPacket.getAddress();
-					//int port = incomingPacket.getPort();
+					
+					String received = "received";
+					byte[] bytes = received.getBytes();
+					DatagramPacket ackPacket =
+							new DatagramPacket(bytes, bytes.length, incomingPacket.getAddress(), incomingPacket.getPort());
+					udpSocket.send(ackPacket);
+					
+					server.fillBuffer(incomingPacket.getData()); 
 				}
 			} else {
 				//get connection info from client
@@ -75,18 +78,15 @@ public class ConnectionHandler implements Runnable{
 					byte[] bytes = server.getAudioByte(index++);
 					DatagramPacket sendPacket =
 								new DatagramPacket(bytes, bytes.length, IPAddress, udpPort);
-						udpSocket.send(sendPacket);
+					udpSocket.send(sendPacket);
+					
+					
+					//notify of receipt or loop back
+					
 					if (index >= AudioStreamServerImpl.BUFFER_LENGTH) index = 0;
+					
 				}
 				
-				/* TODO go on with something like this
-				buffer = new byte[BUFFER_SIZE];
-				DatagramPacket incomingPacket = new DatagramPacket(buffer, buffer.length);
-				//receive packet to get Inet and port
-				udpSocket.receive(incomingPacket);
-				InetAddress IPAddress = incomingPacket.getAddress();
-				int port = incomingPacket.getPort();
-				*/
 
 			}
 		} catch (IOException e) {
