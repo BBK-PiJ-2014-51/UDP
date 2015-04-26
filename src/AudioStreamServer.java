@@ -18,4 +18,6 @@ public interface AudioStreamServer extends Runnable{
 	
 	public byte[] getAudioByte(int index);
 
+	public int getProviderIndex();
+
 }
