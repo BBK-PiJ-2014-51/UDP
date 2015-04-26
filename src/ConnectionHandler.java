@@ -14,7 +14,7 @@ public class ConnectionHandler implements Runnable{
 	private DataOutputStream clientOutputStream;
 	private BufferedReader clientInputReader;
 	private Socket connectionSocket;
-	private int nextId;
+	private int id;
 	private DatagramSocket udpSocket;
 	private AudioStreamServer server;
 	
@@ -25,16 +25,17 @@ public class ConnectionHandler implements Runnable{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}	
-		this.nextId = nextId;
+		id = nextId;
 		connectionSocket = client;
 		this.server = server;
 	}
-
+	
+	
 	@Override
 	public void run() {	
-		boolean isProvider = (nextId == server.getProviderIndex());
+		boolean isProvider = (id == server.getProviderIndex());
 		try {
-			clientOutputStream.writeBytes(String.valueOf(nextId) + '\n');
+			clientOutputStream.writeBytes(String.valueOf(id) + '\n');
 			clientOutputStream.writeBytes(String.valueOf(
 					(isProvider) ? 1 : 0) + '\n');
 			
@@ -73,31 +74,34 @@ public class ConnectionHandler implements Runnable{
 				InetAddress IPAddress = InetAddress.getByName(ip);
 				
 				//send temp buffer to clients
-				int index = 0;
+				//int index = 0;
 				while (true){
-					System.out.println("Requesting " + index);
-					byte[] bytes = server.getAudioByte(index++);
+					System.out.println("Packet requested by " + id);
+					byte[] bytes = server.getNextAudioByte();
 					DatagramPacket sendPacket =
 								new DatagramPacket(bytes, bytes.length, IPAddress, udpPort);
 					udpSocket.send(sendPacket);
 					
+					//notify of receipt or loop back
 					byte[] response = new byte[8];
 					boolean sent = false;
 					DatagramPacket ackPacket = new DatagramPacket(response, response.length);
 					udpSocket.receive(ackPacket);
 					String ack = new String(ackPacket.getData());
-					if(ack.equals("received")) sent = true;
-					else sent = true;
-					
-					//notify of receipt or loop back
-					
-					if (index >= AudioStreamServerImpl.BUFFER_LENGTH) index = 0;
-					
+					if(ack.equals("received")) server.clientReceived(id);
+					System.out.println("Packet received by client " + id);
+	
+					while (!server.udpIsReady()) {
+						System.out.println("ready = " + server.udpIsReady());
+						Thread.sleep(2);
+					}		
 				}
 				
 
 			}
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 		
