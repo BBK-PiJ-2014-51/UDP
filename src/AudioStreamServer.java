@@ -9,5 +9,13 @@ public interface AudioStreamServer extends Runnable{
 	public int getTcpPort();
 	
 	public boolean isTcpReady();
+	
+	public void closeTcpService();
+
+	int getNumConnected();
+
+	public void fillBuffer(byte[] data);
+	
+	public byte[] getAudioByte(int index);
 
 }
